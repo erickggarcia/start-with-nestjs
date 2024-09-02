@@ -1,18 +1,46 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Put } from '@nestjs/common';
 import { UserRepository } from './user.repository';
 import { CreateUserDTO } from './dto/createUser.dto';
+import { UserEntity } from './user.entity';
+import { randomUUID } from 'node:crypto';
+import { ListUserDTO } from './dto/listUser.dto';
+import { UpdateUserDTO } from './dto/updateUser.dto';
 
 @Controller('/users')
 export class UserController {
   constructor(private userRepository: UserRepository) {}
   @Post()
   async registerUser(@Body() user: CreateUserDTO) {
-    this.userRepository.create(user);
-    return 'Usuário criado com sucesso';
+    const userEntity = new UserEntity();
+    userEntity.id = randomUUID();
+    userEntity.name = user.name;
+    userEntity.email = user.email;
+    userEntity.password = user.password;
+    this.userRepository.create(userEntity);
+
+    return {
+      user: new ListUserDTO(userEntity.id, userEntity.name),
+      message: 'usuário criado com sucesso',
+    };
   }
 
   @Get()
   async listUsers() {
-    return this.userRepository.list();
+    const savedUsers = await this.userRepository.list();
+    const users = savedUsers.map((user) => new ListUserDTO(user.id, user.name));
+
+    return users;
+  }
+
+  @Put('/:id')
+  async updateUser(
+    @Param('id') id: string,
+    @Body() newUserData: UpdateUserDTO,
+  ) {
+    const updatedUser = await this.userRepository.updateUser(id, newUserData);
+    return {
+      user: new ListUserDTO(updatedUser.id, updatedUser.name),
+      message: 'usuário atualizado com sucesso',
+    };
   }
 }
