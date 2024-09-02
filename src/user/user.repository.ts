@@ -18,21 +18,35 @@ export class UserRepository {
     return emailExists;
   }
 
-  async updateUser(id: string, newUserData: Partial<UserEntity>) {
+  private searchUserById(id: string) {
     const userExists = this.createdUsers.find((user) => user.id === id);
 
     if (!userExists) {
       throw new Error('usuário não cadastrado');
     }
 
+    return userExists;
+  }
+
+  async updateUser(id: string, newUserData: Partial<UserEntity>) {
+    const user = this.searchUserById(id);
+
     Object.entries(newUserData).forEach(([key, value]) => {
       if (key === 'id') {
         return;
       }
 
-      userExists[key] = value;
+      user[key] = value;
     });
 
-    return userExists;
+    return user;
+  }
+
+  async deleteUser(id: string) {
+    const deletedUser = this.searchUserById(id);
+
+    this.createdUsers = this.createdUsers.filter((user) => user.id !== id);
+
+    return deletedUser;
   }
 }
